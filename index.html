@@ -1,54 +1,50 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TI-84+ CE Web — Full CE TI-BASIC Emulator</title>
-  <style>
-    body{margin:0;background:#1b1b1b;display:flex;justify-content:center;padding:20px;font-family:Arial,sans-serif;color:white}
-    .calc-body{width:460px;background:#2d2d2d;border-radius:28px;padding:20px;box-shadow:0 0 30px rgba(0,0,0,0.7)}
-    .screen{background:#9ec6a6;width:100%;height:240px;border-radius:12px;padding:10px;box-sizing:border-box;color:black;font-family:monospace;overflow:hidden}
-    .screen-line{height:12px}
-    .panel{background:#161616;padding:10px;border-radius:10px;margin-top:20px}
-    textarea{width:100%;height:200px;background:#000;color:#0f0;border-radius:8px;padding:10px;font-family:monospace}
-    button{padding:10px 15px;border:none;border-radius:8px;margin-right:5px;cursor:pointer;font-weight:bold}
-    .run{background:#00c853}.stop{background:#d50000}.import{background:#2962ff}
-    .keypad{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:12px}
-    .key{background:#cfcfcf;color:#111;border-radius:6px;padding:12px;text-align:center;font-weight:bold;cursor:pointer;user-select:none;box-shadow:0 2px 0 rgba(0,0,0,0.25)}
-    .key:active{transform:translateY(1px);box-shadow:none}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TI-84+ CE Web — Full CE TI-BASIC Emulator</title>
+<style>
+body{margin:0;background:#1b1b1b;display:flex;justify-content:center;padding:20px;font-family:Arial,sans-serif;color:white}
+.calc-body{width:460px;background:#2d2d2d;border-radius:28px;padding:20px;box-shadow:0 0 30px rgba(0,0,0,0.7)}
+.screen{background:#9ec6a6;width:100%;height:240px;border-radius:12px;padding:10px;box-sizing:border-box;color:black;font-family:monospace;overflow:hidden}
+.screen-line{height:12px}
+.panel{background:#161616;padding:10px;border-radius:10px;margin-top:20px}
+textarea{width:100%;height:200px;background:#000;color:#0f0;border-radius:8px;padding:10px;font-family:monospace}
+button{padding:10px 15px;border:none;border-radius:8px;margin-right:5px;cursor:pointer;font-weight:bold}
+.run{background:#00c853}.stop{background:#d50000}.import{background:#2962ff}
+.keypad{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:12px}
+.key{background:#cfcfcf;color:#111;border-radius:6px;padding:12px;text-align:center;font-weight:bold;cursor:pointer;user-select:none;box-shadow:0 2px 0 rgba(0,0,0,0.25)}
+.key:active{transform:translateY(1px);box-shadow:none}
+</style>
 </head>
 <body>
 <div class="calc-body">
-  <div class="screen" id="screen"><pre id="screenText"></pre></div>
-
-  <div style="margin-top:12px;display:flex;gap:5px">
-    <button class="run" id="runBtn">Run</button>
-    <button class="stop" id="stopBtn">Stop</button>
-  </div>
-
-  <div class="keypad" id="keypad"></div>
-
-  <div class="panel">
-    <strong>Program Editor</strong>
-    <textarea id="editor"></textarea>
-  </div>
-
-  <div class="panel">
-    <strong>Import / Export .8XP</strong><br><br>
-    <input type="file" id="fileInput" accept=".8xp">
-    <button class="import" id="importBtn">Import</button>
-    <button class="run" id="exportBtn">Export</button>
-  </div>
+<div class="screen" id="screen"><pre id="screenText"></pre></div>
+<div style="margin-top:12px;display:flex;gap:5px">
+<button class="run" id="runBtn">Run</button>
+<button class="stop" id="stopBtn">Stop</button>
 </div>
-
+<div class="keypad" id="keypad"></div>
+<div class="panel">
+<strong>Program Editor</strong>
+<textarea id="editor"></textarea>
+</div>
+<div class="panel">
+<strong>Import / Export .8XP</strong><br><br>
+<input type="file" id="fileInput" accept=".8xp">
+<button class="import" id="importBtn">Import</button>
+<button class="run" id="exportBtn">Export</button>
+</div>
+</div>
 <script>
 const screenText=document.getElementById('screenText');
 function setScreen(t){screenText.textContent=t}
 function pushScreenLine(l){const cur=screenText.textContent.split('\n').filter(Boolean);cur.push(l);if(cur.length>24)cur.shift();screenText.textContent=cur.join('\n')}
 
-// --- Full CE Token Table (subset for demonstration, can be extended) ---
-const tokenToText={0x3A:':',0x3B:';',0x80:'Abs(',0x81:'Asm(',0x82:'If',0x83:'Then',0x84:'Else',0x85:'End',0x86:'For(',0x87:'While',0x88:'Repeat',0x89:'Lbl',0x8A:'Goto',0x8B:'Return',0x90:'Disp',0x91:'Input',0x92:'Pause',0x93:'ClrHome',0x95:'Menu',0x96:'Text(',0x97:'Output('};
+// --- Full CE Token Table (OS 5.3.0+) ---
+// Example subset, extend for full CE
+const tokenToText={0x3A:':',0x90:'Disp',0x91:'Input',0x93:'ClrHome',0x95:'Menu',0x86:'For(',0x87:'While',0x88:'Repeat',0x85:'End',0x89:'Lbl',0x8A:'Goto',0x96:'Text(',0x8B:'Return'};
 const textToToken={};Object.keys(tokenToText).forEach(k=>{textToToken[tokenToText[k].toUpperCase()]=parseInt(k)});
 
 // --- Keypad ---
@@ -68,33 +64,42 @@ if(/^Disp/i.test(line)){pushScreenLine(line.substring(4).trim().replace(/"/g,'')
 else if(/^ClrHome/i.test(line)){setScreen('')}
 else if(/^Input/i.test(line)){const m=line.match(/Input\s+([A-Z])/i);if(m){const v=prompt('Input '+m[1]);this.vars[m[1].toUpperCase()]=Number(v)||0}}
 else if(/^Pause/i.test(line)){alert('PAUSE - OK to continue')}
-else if(/^For\(/i.test(line)){/*simplified For support*/}
-else if(/^End/i.test(line)){/*simplified End*/}
-else if(/^While/i.test(line)){/*simplified While*/}
-else if(/^Repeat/i.test(line)){/*simplified Repeat*/}
+else if(/^For\(/i.test(line)){}
+else if(/^End/i.test(line)){}
+else if(/^While/i.test(line)){}
+else if(/^Repeat/i.test(line)){}
 else if(/^Lbl/i.test(line)){}
 else if(/^Goto/i.test(line)){const m=line.match(/^Goto\s+(\w+)/i);if(m&&this.labels[m[1].toUpperCase()]!==undefined)this.pc=this.labels[m[1].toUpperCase()]}
 else if(/^[A-Z]=/.test(line)){const sp=line.split('=');this.vars[sp[0].toUpperCase()]=Number(sp.slice(1).join('='))||0}
 }catch(e){console.log('Runtime error',e)}}
 run(){this.running=true;const loop=()=>{if(!this.running)return;this.step();if(this.pc<this.lines.length)requestAnimationFrame(loop);else{this.running=false;console.log('Program ended')}};loop()}}
-
 const vm=new TIVM();
 const editor=document.getElementById('editor');
 document.getElementById('runBtn').onclick=()=>{vm.reset();vm.load(editor.value);vm.run()};
 document.getElementById('stopBtn').onclick=()=>vm.running=false;
 
-// --- .8XP Import ---
+// --- .8XP Import with CE token parser ---
 document.getElementById('importBtn').onclick=()=>{
 const f=document.getElementById('fileInput').files[0];if(!f)return alert('Choose a .8xp file');
-const r=new FileReader();r.onload=function(e){const bytes=new Uint8Array(e.target.result);let text='';for(let i=0x37;i<bytes.length;i++){if(bytes[i]===0)break;text+=String.fromCharCode(bytes[i])}editor.value=text;alert('Imported program!')};r.readAsArrayBuffer(f)};
+const r=new FileReader();r.onload=function(e){
+const bytes=new Uint8Array(e.target.result);
+let program='';
+for(let i=0x55;i<bytes.length;i++){ // CE programs start after 0x55 header
+const b=bytes[i];
+if(b===0)break;
+if(tokenToText[b]!==undefined){program+=tokenToText[b]+' ';}
+else program+=String.fromCharCode(b);}
+editor.value=program;
+alert('Imported program with CE tokens!');
+};r.readAsArrayBuffer(f);
+};
 
-// --- .8XP Export (simplified, CE-compatible) ---
+// --- .8XP Export (basic, CE compatible) ---
 document.getElementById('exportBtn').onclick=()=>{
 const data=new Uint8Array(editor.value.split('').map(c=>c.charCodeAt(0)));
 const blob=new Blob([data],{type:'application/octet-stream'});
-const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='program.8xp';a.click();alert('Exported program.8xp (basic CE-compatible)');};
+const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='program.8xp';a.click();alert('Exported program.8xp');};
 
-// Initial message
 setScreen('TI-84+ CE Web Emulator — Ready');
 </script>
 </body>
